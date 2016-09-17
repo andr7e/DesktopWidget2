@@ -1,0 +1,6 @@
+<RCC>
+    <qresource prefix="/">
+        <file>qIconPanel.desktop</file>
+        <file>images/qiconpanel.png</file>
+    </qresource>
+</RCC>
