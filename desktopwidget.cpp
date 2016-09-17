@@ -15,7 +15,7 @@
 #include "utils.h"
 
 DesktopWidget::DesktopWidget(QWidget *parent) :
-    QWidget(parent), desktopMode_ (true), iconSize_(64), direction_(0),
+    QWidget(parent), desktopMode_ (true),
     ui(new Ui::DesktopWidget)
 {
     ui->setupUi(this);
@@ -62,31 +62,35 @@ void DesktopWidget::reloadItems ()
 
     //itemPaths_ << "/usr/share/applications/gimp.desktop" << "/usr/share/applications/qtcreator.desktop" << "/usr/share/applications/firefox.desktop" ;
 
-    for (int i=0; i < itemPaths_.size(); i++) addItem (itemPaths_[i]);
+    QStringList itemPaths = settings_.getItems();
+
+    for (int i = 0; i < itemPaths.size(); i++) addItem (itemPaths[i]);
 }
 
 #define ICON_COEFFICIENT 1.1
 
 int DesktopWidget::getPanelWidth ()
 {
-    return iconSize_ * (items.size() + 1) * ICON_COEFFICIENT;
+    return settings_.getIconSize() * (items.size() + 1) * ICON_COEFFICIENT;
 }
 
 int DesktopWidget::getPanelHeight()
 {
-    return iconSize_ * ICON_COEFFICIENT;
+    return settings_.getIconSize() * ICON_COEFFICIENT;
 }
 
 int DesktopWidget::getWidth()
 {
-    if (!direction_) return getPanelWidth ();
-    else return getPanelHeight ();
+    if ( ! settings_.getDirection()) return getPanelWidth ();
+
+    return getPanelHeight ();
 }
 
 int DesktopWidget::getHeight()
 {
-    if (!direction_) return getPanelHeight ();
-    else return getPanelWidth ();
+    if (! settings_.getDirection()) return getPanelHeight ();
+
+    return getPanelWidth ();
 }
 
 void DesktopWidget::hovered ()
@@ -96,15 +100,17 @@ void DesktopWidget::hovered ()
 
 void DesktopWidget::reloadIconBar ()
 {
-    QSize barSize = QSize (iconSize_, iconSize_);
+    int iconSize = settings_.getIconSize();
+
+    QSize barSize = QSize (iconSize, iconSize);
 
     iconBar_->clear ();
 
     iconBar_->setIconSize (barSize);
 
-    iconBar_->setOrientation(Qt::Orientation (direction_ + 1));
+    iconBar_->setOrientation(Qt::Orientation (settings_.getDirection() + 1));
 
-    for (int i=0 ; i < items.size(); i++)
+    for (int i = 0 ; i < items.size(); i++)
     {
         actions_[i] = iconBar_->addAction (getResizedIcon (items[i].getIcon(), barSize), items[i].getName());
 
@@ -129,33 +135,23 @@ void DesktopWidget::mousePressEvent (QMouseEvent *pe)
 
 void DesktopWidget::mouseMoveEvent (QMouseEvent *pe)
 {
+    if (settings_.isPanelLocked()) return;
+
     move (pe->globalPos() - pos_);
 }
 
 //Settings
 
-#define KEY_ICON_SIZE_STRING "icon-size"
-#define KEY_DIRECTION_STRING "direction"
-#define KEY_ITEMS_LIST_STRING "items-list"
-
 void DesktopWidget::readSettings ()
 {
     //qDebug () << Q_FUNC_INFO;
+
+    settings_.load();
 
     QPoint pos (0,50);
     QSize size (600,100);
 
     readWindowSettings (pos, size, objectName());
-
-    QSettings s;
-
-    iconSize_ = s.value (KEY_ICON_SIZE_STRING, 64).toInt();
-
-    direction_ = s.value (KEY_DIRECTION_STRING, 0).toBool();
-
-    itemPaths_ = s.value (KEY_ITEMS_LIST_STRING, QStringList()).toStringList();
-
-    if (itemPaths_.isEmpty()) itemPaths_ << ":/qIconPanel.desktop";
 
     //qDebug () << size.width ();
 
@@ -164,17 +160,11 @@ void DesktopWidget::readSettings ()
 
 void DesktopWidget::writeSettings ()
 {
+    settings_.save();
+
     //qDebug () << Q_FUNC_INFO;
 
     writeWindowSettings (pos (), size (), objectName());
-
-    QSettings s;
-
-    s.setValue (KEY_ICON_SIZE_STRING, iconSize_);
-
-    s.setValue (KEY_DIRECTION_STRING, direction_);
-
-    s.setValue (KEY_ITEMS_LIST_STRING, itemPaths_);
 
     qDebug () << Q_FUNC_INFO << width() << " " << height();
 }
@@ -216,27 +206,19 @@ void DesktopWidget::settingsSlot ()
 
     dialog->setWindowTitle (tr("Settings"));
 
-    QVariantHash info;
-
-    setIconSizeToHash (info, iconSize_);
-    setDirectionToHash (info, direction_);
-    setItemsToHash (info, itemPaths_);
-
-    dialog->setInfo (info);
+    dialog->setInfo (settings_);
 
     if (dialog->exec () == QDialog::Accepted)
     {
-        info = dialog->getInfo ();
+        Settings info = dialog->getInfo ();
 
-        iconSize_ = getIconSizeFromHash (info);
-        direction_ = getDirectionFromHash (info);
-        itemPaths_ = getItemsFromHash (info);
-
-        qDebug () << Q_FUNC_INFO << itemPaths_;
+        settings_ = info;
 
         reloadItems();
 
         reloadIconBar ();
+
+        writeSettings();
 
         setDesktopWidgetFlags ();
 
@@ -283,16 +265,16 @@ void DesktopWidget::contextMenuEvent(QContextMenuEvent *event)
 {
     QMenu menu(this);
 
-    QAction *settingsAct = menu.addAction(tr("Settings"));
-    connect (settingsAct, SIGNAL(triggered()), SLOT(settingsSlot()));
+    QAction *settingsAction = menu.addAction(tr("Settings"));
+    connect (settingsAction, SIGNAL(triggered()), SLOT(settingsSlot()));
 
     //QAction *aboutAct = menu.addAction(tr("About"));
     //connect (aboutAct, SIGNAL(triggered()), SLOT(aboutSlot()));
 
     menu.addSeparator();
 
-    QAction *exitAct = menu.addAction(tr("Exit"));
-    connect (exitAct, SIGNAL(triggered()), SLOT(close()));
+    QAction *exitAction = menu.addAction(tr("Exit"));
+    connect(exitAction, SIGNAL(triggered()), qApp, SLOT(quit()));
 
     menu.exec (event->globalPos());
 }
@@ -317,38 +299,4 @@ void DesktopWidget::paintEvent(QPaintEvent *pe)
 void DesktopWidget::closeEvent (QCloseEvent *)
 {
     writeSettings ();
-}
-
-//Hash
-//icon-size
-int DesktopWidget::getIconSizeFromHash (const QVariantHash &hash)
-{
-    return hash.value(KEY_ICON_SIZE_STRING).toInt ();
-}
-
-void DesktopWidget::setIconSizeToHash (QVariantHash &hash, int iconSize)
-{
-    setValueToHash (hash, KEY_ICON_SIZE_STRING, iconSize);
-}
-
-//direction
-bool DesktopWidget::getDirectionFromHash (const QVariantHash &hash)
-{
-    return hash.value(KEY_DIRECTION_STRING).toBool ();
-}
-
-void DesktopWidget::setDirectionToHash (QVariantHash &hash, bool direction)
-{
-    setValueToHash (hash, KEY_DIRECTION_STRING, direction);
-}
-
-//stringlist
-QStringList DesktopWidget::getItemsFromHash (const QVariantHash &hash)
-{
-    return hash.value(KEY_ITEMS_LIST_STRING).toStringList();
-}
-
-void DesktopWidget::setItemsToHash (QVariantHash &hash, const QStringList &list)
-{
-    setValueToHash (hash, KEY_ITEMS_LIST_STRING, list);
 }

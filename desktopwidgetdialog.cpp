@@ -31,10 +31,12 @@ DesktopWidgetDialog::~DesktopWidgetDialog()
     delete ui;
 }
 
-void DesktopWidgetDialog::setInfo (const QVariantHash &info)
+void DesktopWidgetDialog::setInfo (const Settings &info)
 {
-    int size = DesktopWidget::getIconSizeFromHash (info);
-    int direction = DesktopWidget::getDirectionFromHash (info);
+    int size      = info.getIconSize();
+    int direction = info.getDirection();
+    bool lock     = info.isPanelLocked();
+    QStringList items = info.getItems();
 
     ui->spinBox->setValue (size);
 
@@ -43,21 +45,25 @@ void DesktopWidgetDialog::setInfo (const QVariantHash &info)
 
     ui->comboBox->setCurrentIndex (direction);
 
-    QStringList items = DesktopWidget::getItemsFromHash (info);
+    ui->lockPanelCheckBox->setChecked(lock);
 
     model_->setStringList (items);
-
     ui->listView->setModel(model_);
 }
 
-QVariantHash DesktopWidgetDialog::getInfo ()
+Settings DesktopWidgetDialog::getInfo ()
 {
-    QVariantHash info;
+    int size      = ui->spinBox->value ();
+    int direction = ui->comboBox->currentIndex();
+    bool lock     = ui->lockPanelCheckBox->isChecked();
+    QStringList items = model_->stringList();
 
-    DesktopWidget::setIconSizeToHash (info, ui->spinBox->value ());
-    DesktopWidget::setDirectionToHash (info, ui->comboBox->currentIndex());
+    Settings info;
 
-    DesktopWidget::setItemsToHash (info, model_->stringList());
+    info.setIconSize   (size);
+    info.setDirection  (direction);
+    info.setPanelLocked(lock);
+    info.setItems      (items);
 
     return info;
 }
@@ -107,18 +113,8 @@ void DesktopWidgetDialog::on_downButton_clicked()
 
 void DesktopWidgetDialog::on_addButton_clicked()
 {
-    /*
-    QModelIndex index;
-
-    model_->insertRow (model_->rowCount(), index);
-
-    index = model_->index (model_->rowCount() - 1);
-
-    model_->setData(index, QString(":/qIconPanel.desktop"));
-    */
-
     QString format = "desktop";
-    QString initialPath;
+    QString initialPath = "/usr/share/applications";
 
     QString fileName = QFileDialog::getOpenFileName(this, tr("Add"),
                                initialPath,

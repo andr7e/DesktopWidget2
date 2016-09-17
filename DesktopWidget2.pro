@@ -17,13 +17,17 @@ SOURCES += main.cpp\
     desktopitem.cpp \
     utils.cpp \
     windowsettings.cpp \
-    desktopwidgetdialog.cpp
+    desktopwidgetdialog.cpp \
+    settings.cpp \
+    desktopformathelper.cpp
 
 HEADERS  += desktopwidget.h \
     desktopitem.h \
     utils.h \
     windowsettings.h \
-    desktopwidgetdialog.h
+    desktopwidgetdialog.h \
+    settings.h \
+    desktopformathelper.h
 
 FORMS    += desktopwidget.ui \
     desktopwidgetdialog.ui

@@ -5,6 +5,8 @@
 #include <QVariantHash>
 #include <QStringListModel>
 
+#include "settings.h"
+
 namespace Ui {
 class DesktopWidgetDialog;
 }
@@ -17,8 +19,8 @@ public:
     explicit DesktopWidgetDialog(QWidget *parent = 0);
     ~DesktopWidgetDialog();
 
-    void setInfo (const QVariantHash &info);
-    QVariantHash getInfo ();
+    void setInfo (const Settings &info);
+    Settings getInfo();
     
 private slots:
     void on_upButton_clicked();

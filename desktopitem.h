@@ -13,13 +13,13 @@ public:
     DesktopItem (){}
     DesktopItem (const QString &name, const QString &icon, const QString &path) : name_(name), icon_(icon), path_(path){}
 
-    QString getName () const { return name_; }
-    QString getIcon () const { return icon_; }
-    QString getPath () const { return path_; }
+    QString getName () const;
+    QString getIcon () const;
+    QString getPath () const;
 
-    void setName (const QString &name){ name_=name; }
-    void setIcon (const QString &icon){ icon_=icon; }
-    void setPath (const QString &path){ path_=path; }
+    void setName (const QString &name);
+    void setIcon (const QString &icon);
+    void setPath (const QString &path);
 
     void load (const QString &fname);
 };

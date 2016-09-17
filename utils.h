@@ -9,4 +9,10 @@ QIcon getResizedIcon (const QString &fname, const QSize &size);
 
 void setValueToHash (QVariantHash &hash, const QString &key, const QVariant &value);
 
+class Utils
+{
+public:
+    static QString systemLanguage ();
+};
+
 #endif // UTILS_H

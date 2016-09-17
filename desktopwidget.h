@@ -8,6 +8,7 @@
 
 #include "windowsettings.h"
 #include "desktopitem.h"
+#include "settings.h"
 
 #define MAX_ACTION 128
 
@@ -58,16 +59,6 @@ public:
 
     void executeApplication (const QString &path);
 
-    //Hash
-    static int getIconSizeFromHash (const QVariantHash &hash);
-    static void setIconSizeToHash (QVariantHash &hash, int iconSize);
-
-    static bool getDirectionFromHash (const QVariantHash &hash);
-    static void setDirectionToHash (QVariantHash &hash, bool direction);
-
-    static QStringList getItemsFromHash (const QVariantHash &hash);
-    static void setItemsToHash (QVariantHash &hash, const QStringList &list);
-
 public slots:
     void executeApplicationSlot (QAction *action);
 
@@ -80,14 +71,14 @@ private:
     bool desktopMode_;
     QPoint pos_;
     QProcess process_;
-    int iconSize_;
-    bool direction_;
+
     QAction *actions_[MAX_ACTION];
     QToolBar *iconBar_;
     Ui::DesktopWidget *ui;
 
-    QStringList itemPaths_;
     QVector<DesktopItem> items;
+
+    Settings settings_;
 };
 
 #endif // DESKTOPWIDGET_H

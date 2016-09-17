@@ -75,6 +75,13 @@
           </layout>
          </item>
          <item>
+          <widget class="QCheckBox" name="lockPanelCheckBox">
+           <property name="text">
+            <string>Lock Panel</string>
+           </property>
+          </widget>
+         </item>
+         <item>
           <spacer name="verticalSpacer">
            <property name="orientation">
             <enum>Qt::Vertical</enum>
